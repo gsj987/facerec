@@ -1,7 +1,10 @@
 from facerec.classifier import SVM
 from facerec.validation import KFoldCrossValidation
 from facerec.model import PredictableModel
-from svmutil import *
+try:
+  from svmutil import *
+except:
+  from libsvm.svmutil import *
 from itertools import product
 import numpy as np
 import logging

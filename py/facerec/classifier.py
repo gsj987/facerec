@@ -46,6 +46,7 @@ try:
 	from svmutil import *
 	# for suppressing output
 except ImportError:
+	from libsvm.svmutil import *
 	logger = logging.getLogger("facerec.classifier.SVM")
 	logger.debug("Import Error: libsvm bindings not available.")
 except:
