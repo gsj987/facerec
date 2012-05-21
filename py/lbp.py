@@ -1,7 +1,7 @@
 #_*_ coding:utf-8_*_
 from facerec.dataset import DataSet
 from facerec.feature import ChainOperator
-from facerec.feature import LBP
+from facerec.feature import LBP,MulitiScalesLBP
 from facerec.distance import HistogramIntersection,ChiSquareDistance,BinRatioDistance,ChiSquareBRD
 from facerec.classifier import NearestNeighbor
 from facerec.model import PredictableModel
@@ -34,7 +34,7 @@ for s in range(3,9):
 # define Fisherfaces as feature extraction method
 
   #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
-  feature = LBP(sz=(s,s))
+  feature = MulitiScalesLBP(sz=(s,s))
 # now stuff them into a PredictableModel
   model = PredictableModel(feature=feature, classifier=classifier)
 # show fisherfaces

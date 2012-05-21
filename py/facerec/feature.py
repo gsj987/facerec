@@ -263,3 +263,51 @@ class LBP(AbstractFeature):
 	
 	def __repr__(self):
 		return "Local Binary Pattern (operator=%s, grid=%s)" % (repr(self.lbp_operator), str(self.sz))
+
+class MulitiScalesLBP(AbstractFeature):
+  """
+  LBP with Muliti Scales
+  Multi-scale Local Binary Pattern Histograms for Face Recognition[M], 2007
+  """
+  def __init__(self, lbp_operator_scale_range=range(1,11), sz=(8,8)):
+    AbstractFeature.__init__(self)
+    self.operators = [ExtendedLBP(r) for r in lbp_operator_scale_range] 
+    self.sz = sz
+
+  def compute(self, X,y):
+    features = []
+    for x in X:
+        x = np.asarray(x)
+        h = self.spatially_enhanced_histogram(x)
+        features.append(h)
+    return features
+
+  def extract(self, X):
+    X = np.asarray(X)
+    return self.spatially_enhanced_histogram(X)
+
+  def spatially_enhanced_histogram(self, X):
+    
+    E = []
+    rE = []
+    grid_rows, grid_cols = self.sz
+    for operator in self.operators:
+      L = operator(X)
+      rT = []
+      # calculate the grid geometry
+      lbp_height, lbp_width = L.shape
+      py = int(np.floor(lbp_height/grid_rows))
+      px = int(np.floor(lbp_width/grid_cols))
+      for row in range(0,grid_rows):
+        for col in range(0,grid_cols):
+          C = L[row*py:(row+1)*py,col*px:(col+1)*px]
+          H = np.histogram(C, bins=2**operator.neighbors, range=(0, 2**operator.neighbors), normed=True)[0]
+          # probably useful to apply a mapping?
+          rT.append(H)
+      rE.append(rT)
+
+    for row in range(grid_rows):
+      for col in range(grid_cols):
+        for r in range(len(rE)):
+          E.extend(rE[r][row*grid_cols+col])
+    return np.asarray(E)
