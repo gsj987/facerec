@@ -264,6 +264,34 @@ class LBP(AbstractFeature):
 	def __repr__(self):
 		return "Local Binary Pattern (operator=%s, grid=%s)" % (repr(self.lbp_operator), str(self.sz))
 
+
+class SingleGridLBP(LBP):
+  """
+  Get A Single Part of LBP for LBP Weighted.
+  """
+  def __init__(self, part_nm, lbp_operator=ExtendedLBP(), sz = (8,8)):
+    super(SingleGridLBP, self).__init__(lbp_operator, sz)
+    self.part_nm = part_nm
+    self.part_range = (lbp_operator.nvalues*part_nm,
+                        lbp_operator.nvalues*(part_nm+1))
+
+  def compute(self,X,y):
+    features = super(SingleGridLBP, self).compute(X,y)
+    H = []
+    for feature in features:
+      H.append(feature[self.part_range[0]: self.part_range[1]])
+
+    return H
+
+  def extract(self, X):
+    H = super(SingleGridLBP, self).extract(X)
+    return H[self.part_range[0]: self.part_range[1]]
+  
+  def __repr__(self):
+		return "SinglePartLBP (operator=%s, grid=%s, part=%d)" \
+      %(repr(self.lbp_operator), str(self.sz), self.part_nm)
+
+
 class MulitiScalesLBP(AbstractFeature):
   """
   LBP with Muliti Scales

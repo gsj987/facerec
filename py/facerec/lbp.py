@@ -109,7 +109,7 @@ class RadiusInvariantUniformLBP(ExtendedLBP):
   def __init__(self, radius=1, neighbors=8, convert_table=None):
     super(RadiusInvariantUniformLBP, self).__init__(radius, neighbors)
     self._nvalues = neighbors + 2
-    if not convert_table:
+    if convert_table==None:
       self.convert_table = \
       RadiusInvariantUniformLBP.build_convert_table(neighbors)
     else:

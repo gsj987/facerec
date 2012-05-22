@@ -151,5 +151,4 @@ class ChiSquareWeightedDistance(AbstractDistance):
     p = np.asarray(p).reshape(2**self.neighbour, -1)
     q = np.asarray(q).reshape(2**self.neighbour, -1)
     bin_dists = np.matrix(((p-q)**2/(p+q+np.finfo('float').eps)))
-    #print bin_dists.shape, self.weight_matrix.shape
     return np.sum(bin_dists * self.weight_matrix)
