@@ -6,7 +6,7 @@ from facerec.classifier import NearestNeighbor
 from facerec.model import PredictableModel
 from facerec.validation import KFoldCrossValidation
 from facerec.visual import plot_eigenvectors
-from facerec.lbp import ExtendedLBP
+from facerec.lbp import ExtendedLBP, RadiusInvariantUniformLBP
 from facerec.preprocessing import HistogramEqualization, TanTriggsPreprocessing,LBPPreprocessing
 from PIL import Image
 import scipy.misc.pilutil as smp
@@ -25,11 +25,11 @@ logger.setLevel(logging.DEBUG)
 dataSet = DataSet("/Users/gsj987/Desktop/sjtu-thesis-xelatex/figures/chap3/faces/")
 #model = HistogramEqualization()
 #model = TanTriggsPreprocessing()
-model = LBPPreprocessing(ExtendedLBP(9,8))
+model = LBPPreprocessing(ExtendedLBP(1,8))
 features = model.compute(dataSet.data, None)
 
 img = smp.toimage(np.asarray(features[0]))
-img.save("t9.jpg")
+img.save("e1.jpg")
 # define a 1-NN classifier with Euclidean Distance
 #classifier = NearestNeighbor(dist_metric=EuclideanDistance())
 # define Fisherfaces as feature extraction method

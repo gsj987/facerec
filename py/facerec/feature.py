@@ -222,7 +222,7 @@ class Fisherfaces(AbstractFeature):
 	def __repr__(self):
 		return "Fisherfaces (num_components=%s)" % (self.num_components)
 
-from facerec.lbp import LBPOperator, ExtendedLBP
+from facerec.lbp import LBPOperator, ExtendedLBP, RadiusInvariantUniformLBP
 
 class LBP(AbstractFeature):
 	def __init__(self, lbp_operator=ExtendedLBP(), sz = (8,8)):
@@ -256,7 +256,7 @@ class LBP(AbstractFeature):
 		for row in range(0,grid_rows):
 			for col in range(0,grid_cols):
 				C = L[row*py:(row+1)*py,col*px:(col+1)*px]
-				H = np.histogram(C, bins=2**self.lbp_operator.neighbors, range=(0, 2**self.lbp_operator.neighbors), normed=True)[0]
+				H = np.histogram(C, bins=self.lbp_operator.nvalues, range=(0, self.lbp_operator.nvalues), normed=True)[0]
 				# probably useful to apply a mapping?
 				E.extend(H)
 		return np.asarray(E)
@@ -269,9 +269,13 @@ class MulitiScalesLBP(AbstractFeature):
   LBP with Muliti Scales
   Multi-scale Local Binary Pattern Histograms for Face Recognition[M], 2007
   """
-  def __init__(self, lbp_operator_scale_range=range(1,11), sz=(8,8)):
+  def __init__(self, 
+                lbp_operator_scale_range=range(1,11), 
+                sz=(8,8),
+                lbp_operator_class=RadiusInvariantUniformLBP,
+                neighbours=8):
     AbstractFeature.__init__(self)
-    self.operators = [ExtendedLBP(r) for r in lbp_operator_scale_range] 
+    self.operators = [lbp_operator_class(r, neighbours) for r in lbp_operator_scale_range] 
     self.sz = sz
 
   def compute(self, X,y):
@@ -301,7 +305,7 @@ class MulitiScalesLBP(AbstractFeature):
       for row in range(0,grid_rows):
         for col in range(0,grid_cols):
           C = L[row*py:(row+1)*py,col*px:(col+1)*px]
-          H = np.histogram(C, bins=2**operator.neighbors, range=(0, 2**operator.neighbors), normed=True)[0]
+          H = np.histogram(C, bins=operator.nvalues, range=(0, operator.nvalues), normed=True)[0]
           # probably useful to apply a mapping?
           rT.append(H)
       rE.append(rT)

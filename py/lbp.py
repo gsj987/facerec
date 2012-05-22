@@ -1,7 +1,7 @@
 #_*_ coding:utf-8_*_
 from facerec.dataset import DataSet
 from facerec.feature import ChainOperator
-from facerec.feature import LBP,MulitiScalesLBP,ExtendedLBP
+from facerec.feature import LBP,MulitiScalesLBP,ExtendedLBP, RadiusInvariantUniformLBP
 from facerec.distance import HistogramIntersection,ChiSquareDistance,BinRatioDistance,ChiSquareBRD, ChiSquareWeightedDistance
 from facerec.facemask import FACEMASK
 from facerec.classifier import NearestNeighbor
@@ -31,9 +31,9 @@ dataSet = DataSet("/Users/gsj987/Desktop/毕设资料/faces_boys")
 # define a 1-NN classifier with Euclidean Distance
 
 for w in [8]:
-  for r in range(1,3):
+  for r in range(1,2):
     for s in range(3,11):
-      classifier = NearestNeighbor(dist_metric=ChiSquareWeightedDistance(FACEMASK[s-3],w), k=25)
+      classifier = NearestNeighbor(dist_metric=ChiSquareBRD(), k=25)
 # define Fisherfaces as feature extraction method
 
       #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))

@@ -3,6 +3,7 @@ import numpy as np
 class LBPOperator(object):
 	def __init__(self, neighbors):
 		self._neighbors = neighbors
+		self._nvalues = 0
 
 	def __call__(self,X):
 		raise NotImplementedError("Every LBPOperator must implement the __call__ method.")
@@ -10,6 +11,10 @@ class LBPOperator(object):
 	@property
 	def neighbors(self):
 		return self._neighbors
+
+	@property
+	def nvalues(self):
+		return self._nvalues
 		
 	def __repr__(self):
 		return "LBPOperator (neighbors=%s)" % (self._neighbors)
@@ -17,6 +22,7 @@ class LBPOperator(object):
 class OriginalLBP(LBPOperator):
 	def __init__(self):
 		LBPOperator.__init__(self, neighbors=8)
+		self._nvalues = 2**8
 	
 	def __call__(self,X):
 		X = np.asarray(X)
@@ -37,6 +43,7 @@ class ExtendedLBP(LBPOperator):
 	def __init__(self, radius=1, neighbors=8):
 		LBPOperator.__init__(self, neighbors=neighbors)
 		self._radius = radius
+		self._nvalues = 2**neighbors
 		
 	def __call__(self,X):
 		X = np.asanyarray(X)
@@ -96,3 +103,67 @@ class ExtendedLBP(LBPOperator):
 	
 	def __repr__(self):
 		return "ExtendedLBP (neighbors=%s, radius=%s)" % (self._neighbors, self._radius)
+
+
+class RadiusInvariantUniformLBP(ExtendedLBP):
+  def __init__(self, radius=1, neighbors=8, convert_table=None):
+    super(RadiusInvariantUniformLBP, self).__init__(radius, neighbors)
+    self._nvalues = neighbors + 2
+    if not convert_table:
+      self.convert_table = \
+      RadiusInvariantUniformLBP.build_convert_table(neighbors)
+    else:
+      self.convert_table = convert_table
+
+  def __repr__(self):
+    return "RIULBP (neighbors=%s, radius=%s)" % (self._neighbors, self._radius)
+
+  def __call__(self, X):
+    pattern = super(RadiusInvariantUniformLBP, self).__call__(X)
+    px,py = pattern.shape
+    for x in range(px):
+      for y in range(py):
+        pattern[x][y] = self.convert_table[pattern[x][y]]
+    return pattern
+
+  @staticmethod
+  def build_convert_table(nb):
+    _size = 1 << nb
+    if nb<=8:
+      dt = np.uint8
+    elif nb<=16:
+      dt = np.uint16
+    else:
+      dt = np.uint32
+
+    table = np.zeros((_size,), dtype=dt)
+    for i in range(1,nb):
+      table[(1<<i)-1] = i
+
+    for i in range(2, _size):
+      if RadiusInvariantUniformLBP.__is_uniform(i, nb):
+        pmin = RadiusInvariantUniformLBP.__min(i, nb)
+        if pmin!=i:
+          table[i] = table[pmin]
+      else:
+        table[i] = nb+1
+    
+    return table
+
+  @staticmethod
+  def __is_uniform(pattern, nb):
+    first_bit = bool(pattern & (1<<(nb-1)))
+    count = first_bit ^ (pattern & 1)
+    for i in range(nb-1):
+      count += bool(pattern & 1)^bool(pattern & 2)
+      pattern = pattern >> 1
+    return (count <= 2)
+  
+  @staticmethod
+  def __min(pattern, nb):
+    _m  = pattern
+    mask = (1<<(nb-1))
+    for i in range(nb-1):
+      pattern = (pattern>>1)+mask*(pattern&1)
+      if pattern<_m: _m = pattern
+    return _m
