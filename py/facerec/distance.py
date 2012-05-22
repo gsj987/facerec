@@ -134,3 +134,22 @@ class ChiSquareBRD(AbstractDistance):
 		a = np.abs(1-np.dot(p,q.T)) # NumPy needs np.dot instead of * for reducing to tensor
 		b = ((p-q)**2 + 2*a*(p*q)) * (p-q)**2 / ((p+q)**3+np.finfo('float').eps)
 		return np.abs(np.sum(b))
+
+
+class ChiSquareWeightedDistance(AbstractDistance):
+  """
+  Caculate the ChiSquare Dissimilarity based on Weighted.
+
+  "Face Recognition with Local Binary Patterns"(2004), Ahonen T et.al
+  """
+  def __init__(self, weight_matrix, neighbour=8): 
+    AbstractDistance.__init__(self, "ChiSquareWeightedDistance")
+    self.weight_matrix = np.asarray(weight_matrix).reshape(-1, 1)
+    self.neighbour = neighbour
+
+  def __call__(self, p, q):
+    p = np.asarray(p).reshape(2**self.neighbour, -1)
+    q = np.asarray(q).reshape(2**self.neighbour, -1)
+    bin_dists = np.matrix(((p-q)**2/(p+q+np.finfo('float').eps)))
+    #print bin_dists.shape, self.weight_matrix.shape
+    return np.sum(bin_dists * self.weight_matrix)

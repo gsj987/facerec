@@ -1,8 +1,9 @@
 #_*_ coding:utf-8_*_
 from facerec.dataset import DataSet
 from facerec.feature import ChainOperator
-from facerec.feature import LBP,MulitiScalesLBP
-from facerec.distance import HistogramIntersection,ChiSquareDistance,BinRatioDistance,ChiSquareBRD
+from facerec.feature import LBP,MulitiScalesLBP,ExtendedLBP
+from facerec.distance import HistogramIntersection,ChiSquareDistance,BinRatioDistance,ChiSquareBRD, ChiSquareWeightedDistance
+from facerec.facemask import FACEMASK
 from facerec.classifier import NearestNeighbor
 from facerec.model import PredictableModel
 from facerec.validation import KFoldCrossValidation
@@ -24,28 +25,30 @@ import random
 #logger.setLevel(logging.DEBUG)
 # load a dataset
 random.seed()
-dataSet = DataSet("/Users/gsj987/Desktop/毕设资料/faces_girls")
+dataSet = DataSet("/Users/gsj987/Desktop/毕设资料/faces_boys")
 #idx = np.argsort([random.random() for i in xrange(len(dataSet.labels))])
 #dataSet.labels = dataSet.labels[idx]
 # define a 1-NN classifier with Euclidean Distance
 
-for s in range(3,9):
-  classifier = NearestNeighbor(dist_metric=ChiSquareBRD(), k=25)
+for w in [8]:
+  for r in range(1,3):
+    for s in range(3,11):
+      classifier = NearestNeighbor(dist_metric=ChiSquareWeightedDistance(FACEMASK[s-3],w), k=25)
 # define Fisherfaces as feature extraction method
 
-  #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
-  feature = MulitiScalesLBP(sz=(s,s))
+      #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
+      feature = LBP(ExtendedLBP(r,w),sz=(s,s))
 # now stuff them into a PredictableModel
-  model = PredictableModel(feature=feature, classifier=classifier)
+      model = PredictableModel(feature=feature, classifier=classifier)
 # show fisherfaces
-  model.compute(dataSet.data,dataSet.labels)
+      model.compute(dataSet.data,dataSet.labels)
 
- #print model.feature.model2.eigenvectors.shape, dataSet.data
+     #print model.feature.model2.eigenvectors.shape, dataSet.data
 #es = model.feature.model2.eigenvectors
 
-  #plot_eigenvectors(model.feature, 9, sz=dataSet.data[0].shape, filename=None)
+      #plot_eigenvectors(model.feature, 9, sz=dataSet.data[0].shape, filename=None)
 # perform a 5-fold cross validation
-  cv = KFoldCrossValidation(model, 10)
-  cv.validate(dataSet.data, dataSet.labels)
+      cv = KFoldCrossValidation(model, 10)
+      cv.validate(dataSet.data, dataSet.labels)
 
-  print s,cv.tp, cv.fp
+      print s, r, w,cv.tp, cv.fp
