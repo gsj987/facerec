@@ -1,5 +1,7 @@
 from facerec.feature import AbstractFeature
+from facerec.util import asColumnMatrix
 import numpy as np
+import scipy.spatial.distance as ssd
 
 class FeatureOperator(AbstractFeature):
 	"""
@@ -76,7 +78,49 @@ class CombineOperator(FeatureOperator):
 
 	def __repr__(self):
 		return "CombineOperator(" + repr(self.model1) + "," + repr(self.model2) + ")"
-		
+
+
+class CombineOperatorFirstN(CombineOperator):
+  def __init__(self, 
+               model1, 
+               model2, 
+               dataSet, 
+               nm=100, 
+               operator=ssd.cosine):
+    CombineOperator.__init__(self, model1, model2)
+    self.nm = nm
+    self.operator = operator
+    self.idx = None
+    self.__calculate_firstn_features(dataSet.data, 
+                                     dataSet.labels, 
+                                     dataSet.samples)
+
+  def __calculate_firstn_features(self, X, y, S):
+    d = CombineOperator.compute(self,X, y)
+    features = asColumnMatrix(d)
+    SX = np.asarray(S).reshape(1,-1)
+    corr = []
+    for feature in features:
+      if abs(np.linalg.norm(feature))<1e-12:
+        corr.append(1)
+      else:
+        corr.append(-abs(1-self.operator(feature, SX)))
+    #print corr
+    self.idx = np.argsort(corr)
+
+  def compute(self, X, y):
+    features = CombineOperator.compute(self, X, y)
+    C = []
+    for feature in features:
+      C.append(feature.flatten()[self.idx][:self.nm])
+    return C
+
+  def extract(self, X):
+    feature = CombineOperator.extract(self, X)
+    return feature.flatten()[self.idx][:self.nm]
+
+  
+
 class CombineOperatorND(FeatureOperator):
 	"""
 	The CombineOperator combines the output of two multidimensional feature extraction modules.

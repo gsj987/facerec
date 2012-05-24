@@ -30,19 +30,20 @@ dataSet = DataSet("/Users/gsj987/Desktop/毕设资料/faces_boys")
 #dataSet.labels = dataSet.labels[idx]
 # define a 1-NN classifier with Euclidean Distance
 
-for w in [4]:
+for w in [8]:
   for r in range(1,2):
-    convert_table = RadiusInvariantUniformLBP.build_convert_table(w)
+    #convert_table = RadiusInvariantUniformLBP.build_convert_table(w)
+    lbp_operator = RadiusInvariantUniformLBP(r,w)
     for s in range(3,11):
-      print "#####", s, "x", s
-      print "["
-      for p in range(s*s):
-        if p%s == 0: print "[",
-        classifier = NearestNeighbor(dist_metric=ChiSquareBRD(), k=10)
+        
+        classifier = NearestNeighbor(
+            dist_metric=ChiSquareDistance(),
+            k=25
+        )
 # define Fisherfaces as feature extraction method
 
         #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
-        feature = SingleGridLBP(p, RadiusInvariantUniformLBP(r,w, convert_table),sz=(s,s))
+        feature = LBP(lbp_operator,sz=(s,s))
 # now stuff them into a PredictableModel
         model = PredictableModel(feature=feature, classifier=classifier)
 # show fisherfaces
@@ -53,10 +54,7 @@ for w in [4]:
 
         #plot_eigenvectors(model.feature, 9, sz=dataSet.data[0].shape, filename=None)
 # perform a 5-fold cross validation
-        cv = KFoldCrossValidation(model, 3)
+        cv = KFoldCrossValidation(model, 5)
         cv.validate(dataSet.data, dataSet.labels)
         
-        print "%.4f"%(cv.tp/(cv.tp+cv.fp+0.0001)), ",",
-        if (p+1)%s==0: print "],"
-      print "]"
-      print s, r, w,cv.tp, cv.fp
+        print s, r, w,cv.tp, cv.fp, "%.4f" %(cv.tp/(cv.tp+cv.fp+0.001)) 

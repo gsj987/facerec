@@ -142,13 +142,13 @@ class ChiSquareWeightedDistance(AbstractDistance):
 
   "Face Recognition with Local Binary Patterns"(2004), Ahonen T et.al
   """
-  def __init__(self, weight_matrix, neighbour=8): 
+  def __init__(self, weight_matrix, bins): 
     AbstractDistance.__init__(self, "ChiSquareWeightedDistance")
     self.weight_matrix = np.asarray(weight_matrix).reshape(-1, 1)
-    self.neighbour = neighbour
+    self.bins = bins
 
   def __call__(self, p, q):
-    p = np.asarray(p).reshape(2**self.neighbour, -1)
-    q = np.asarray(q).reshape(2**self.neighbour, -1)
+    p = np.asarray(p).reshape(self.bins, -1)
+    q = np.asarray(q).reshape(self.bins, -1)
     bin_dists = np.matrix(((p-q)**2/(p+q+np.finfo('float').eps)))
     return np.sum(bin_dists * self.weight_matrix)

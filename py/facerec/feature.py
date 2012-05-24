@@ -36,7 +36,7 @@ class Identity(AbstractFeature):
 
 
 from facerec.util import asColumnMatrix
-from facerec.operators import ChainOperator, CombineOperator
+from facerec.operators import ChainOperator, CombineOperator, CombineOperatorFirstN
 		
 class PCA(AbstractFeature):
 	def __init__(self, num_components=0):

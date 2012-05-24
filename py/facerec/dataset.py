@@ -5,24 +5,31 @@ import random
 import csv
 
 class DataSet(object):
-	def __init__(self, filename=None, sz=None):
+	def __init__(self, filename=None, sz=None, samplename=None):
 		self.labels = []
 		self.groups = []
 		self.names = {}
 		self.data = []
+		self.samples = []
 		self.sz = sz
 		if filename is not None:
-			self.load(filename)
+			self.load(filename, samplename)
 
 	def shuffle(self):
 		idx = np.argsort([random.random() for i in xrange(len(self.labels))])
 		self.data = [self.data[i] for i in idx]
 		self.labels = self.labels[idx]
+		if len(self.samples)==len(self.labels):
+			self.samples = self.samples[idx]
 		if len(self.groups) == len(self.labels):
 			self.groups = self.groups[idx]
 
-	def load(self, path):
+	def load(self, path, samplepath):
 		c = 0
+		filename_to_samples = None
+		if samplepath!=None:
+			filename_to_samples = dict(list(csv.reader(open(samplepath, "rb"))))
+
 		for dirname, dirnames, filenames in os.walk(path):
 			for subdirname in dirnames:
 				subject_path = os.path.join(dirname, subdirname)
@@ -35,6 +42,8 @@ class DataSet(object):
 							im = im.resize(self.sz, Image.ANTIALIAS)
 						self.data.append(np.asarray(im, dtype=np.uint8))
 						self.labels.append(c)
+						if filename_to_samples!=None:
+							self.samples.append(int(filename_to_samples[filename]))
 					except IOError:
 						pass
 				self.names[c] = subdirname
