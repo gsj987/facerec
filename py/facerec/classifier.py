@@ -3,13 +3,21 @@ from facerec.util import asRowMatrix
 import logging
 import numpy as np
 import operator as op
+import math
 
 class AbstractClassifier(object):
+	weights = 0
+
 	def compute(self,X,y):
 		raise NotImplementedError("Every AbstractClassifier must implement the compute method.")
 	
 	def predict(self,X):
 		raise NotImplementedError("Every AbstractClassifier must implement the predict method.")
+
+	def set_uniform_weights(self, y):
+		N = len(y)
+		weights = (1.0/N)*np.ones(N)
+		self.weights = weights
 
 class NearestNeighbor(AbstractClassifier):
 	"""
@@ -40,6 +48,48 @@ class NearestNeighbor(AbstractClassifier):
 		
 	def __repr__(self):
 		return "NearestNeighbor (k=%s, dist_metric=%s)" % (self.k, repr(self.dist_metric))
+
+class AdaBoost(AbstractClassifier):
+	def __init__(self, weak_classifier_type, T=100):
+		AbstractClassifier.__init__(self)
+		self.WeakClassifierType = weak_classifier_type
+		self.T = T
+
+	def compute(self, X, y):
+		Y = np.array(y)
+		N = len(Y)
+		w = (1.0/N)*np.ones(N)
+		self.weak_classifier_ensemble = []
+		self.alpha = []
+		for t in range(self.T):
+			weak_learner = self.WeakClassifierType
+			weak_learner.weights = w
+			weak_learner.compute(X,y)
+			Y_pred = []
+			for x in X:
+				Y_pred.append(weak_learner.predict(x))
+			# (Y=-1, Y_pred=1) False Positive
+			# (Y=1, Y_pred=-1) Missing  should be assigned more weights
+			#ww = np.log(k)*(numpy.exp( (Y-Y_pred)>1 ) - 1)/(numpy.exp(1)-1) + 1
+			e = sum(0.5*w*abs((Y-Y_pred)))/sum(w)
+			#e = sum(0.5*w*abs(Y-Y_pred))
+			ee = (1-e)/(e*1.0)
+			alpha = 0.5*math.log(ee+0.00001)
+			w *= np.exp(-alpha*Y*Y_pred) #*ww) # increase weights for wrongly classified
+			w /= sum(w)
+			self.weak_classifier_ensemble.append(weak_learner)
+			self.alpha.append(alpha)
+
+	def predict(self,X):
+		X = np.array(X)
+		N, d = X.shape
+		Y = np.zeros(N)
+		for t in range(self.T):
+			#sys.stdout.write('.')
+			weak_learner = self.weak_classifier_ensemble[t]
+			#print Y.shape, self.alpha[t], weak_learner.predict(X).shape
+			Y += self.alpha[t]*weak_learner.predict(X)
+		return int(Y[0])
 
 # libsvm
 try:

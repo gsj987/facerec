@@ -86,27 +86,53 @@ class CombineOperatorFirstN(CombineOperator):
                model2, 
                dataSet, 
                nm=100, 
-               operator=ssd.cosine):
+               operator=ssd.cosine,
+               model1_limit=None):
     CombineOperator.__init__(self, model1, model2)
     self.nm = nm
     self.operator = operator
     self.idx = None
     self.__calculate_firstn_features(dataSet.data, 
                                      dataSet.labels, 
-                                     dataSet.samples)
+                                     dataSet.samples,
+                                     model1_limit)
 
-  def __calculate_firstn_features(self, X, y, S):
-    d = CombineOperator.compute(self,X, y)
-    features = asColumnMatrix(d)
+  def __calculate_firstn_features(self, X, y, S, model1_limit):
+    f1 = self.model1.compute(X, y)
+    f2 = self.model2.compute(X,y)
+
     SX = np.asarray(S).reshape(1,-1)
-    corr = []
-    for feature in features:
+    corr1 = []
+    corr2 = []
+    for feature in asColumnMatrix(f1):
       if abs(np.linalg.norm(feature))<1e-12:
-        corr.append(1)
+        corr1.append(1)
       else:
-        corr.append(-abs(1-self.operator(feature, SX)))
-    #print corr
-    self.idx = np.argsort(corr)
+        corr1.append(-abs(1-self.operator(feature, SX)))
+
+    for feature in asColumnMatrix(f2):
+      if abs(np.linalg.norm(feature))<1e-12:
+        corr2.append(1)
+      else:
+        corr2.append(-abs(1-self.operator(feature, SX)))
+   
+    if model1_limit==None:
+      corr1.extend(corr2)
+      self.idx = np.argsort(corr1)
+    else:
+      idx1 = np.argsort(corr1)
+      idx2 = np.argsort(corr2)
+      if model1_limit>len(idx1):
+        model1_limit = len(idx1)
+      idx2 = idx2+len(idx1)
+      p1 = idx1[:model1_limit]
+      p2 = idx2[:self.nm-model1_limit]
+      p3 = idx1[model1_limit:]
+      p4 = idx2[len(p2):]
+      self.idx = np.hstack((p1,p2))
+      self.idx = np.hstack((self.idx,p3))
+      self.idx = np.hstack((self.idx, p4))
+
 
   def compute(self, X, y):
     features = CombineOperator.compute(self, X, y)

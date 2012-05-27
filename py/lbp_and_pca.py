@@ -46,29 +46,52 @@ for w in [8]:
   for r in range(1,2):
     #convert_table = RadiusInvariantUniformLBP.build_convert_table(w)
     lbp_operator = RadiusInvariantUniformLBP(r,w)
-    for nm in range(20, 380, 20):
-      classifier = NearestNeighbor(
-          dist_metric=EuclideanDistance(),
-          k=25
-      )
+    for nm in range(50, 500, 25):
       # define Fisherfaces as feature extraction method
 
-      #feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
-      model1 = LBP(lbp_operator,sz=(8,8))
-      model2 = PCA(120)
-      feature = CombineOperatorFirstN(model1, model2, dataSet, nm)
+      ##feature = ChainOperator(HistogramEqualization(), LBP(sz=(s,s)))
+      model1 = LBP(lbp_operator) 
+      #feature = MulitiScalesLBP()
+      model2 = PCA(400)
+      feature = CombineOperatorFirstN(model1, model2, dataSet,
+                                      500,model1_limit=nm)
+      
+      #f1 = model1.compute(dataSet.data, dataSet.labels)
+      #f2 = model2.compute(dataSet.data, dataSet.labels)
+      #d1 = f1[0].shape
+      #d2 = f2[0].shape
+      #d3 = feature.idx.shape
+      #count = 0
+      #for d in feature.idx:
+      #  if d<=640:
+      #    count += 1
+      #  else:
+      #    print count
+      #    break
+      #print feature.idx
+      #print d1
+      #break
+      #print nm, count, "%.4f" %((nm-count+0.0001)/count)
+      
+      
+      #feature = PCA(400)
+      for k in [25]:
+        classifier = NearestNeighbor(
+            dist_metric=EuclideanDistance(),
+            k=k
+        )
 
-      # now stuff them into a PredictableModel
-      model = PredictableModel(feature=feature, classifier=classifier)
-      # show fisherfaces
-      model.compute(dataSet.data,dataSet.labels)
+        # now stuff them into a PredictableModel
+        model = PredictableModel(feature=feature, classifier=classifier)
+        # show fisherfaces
+        model.compute(dataSet.data,dataSet.labels)
 
-     #print model.feature.model2.eigenvectors.shape, dataSet.data
+       #print model.feature.model2.eigenvectors.shape, dataSet.data
 #es = model.feature.model2.eigenvectors
 
-      #plot_eigenvectors(model.feature, 9, sz=dataSet.data[0].shape, filename=None)
+        #plot_eigenvectors(model.feature, 9, sz=dataSet.data[0].shape, filename=None)
 # perform a 5-fold cross validation
-      cv = KFoldCrossValidation(model, 5)
-      cv.validate(dataSet.data, dataSet.labels)
-      
-      print nm, r, w,cv.tp, cv.fp, "%.4f" %(cv.tp/(cv.tp+cv.fp+0.001)) 
+        cv = KFoldCrossValidation(model, 5)
+        cv.validate(dataSet.data, dataSet.labels)
+        
+        print nm, cv.tp, cv.fp, "%.4f" %(cv.tp/(cv.tp+cv.fp+0.001)) 
